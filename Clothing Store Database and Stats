@@ -1,0 +1,32 @@
+--Create a clothing store database from scratch
+
+CREATE TABLE store (id INTEGER PRIMARY KEY, item TEXT, color TEXT, price INTEGER, inStock TEXT, quantityInStock INTEGER);
+
+INSERT INTO store VALUES
+(1, 'sweater', 'blue', 6.99 , 'yes', 5),
+(2, 'sweater', 'red', 6.99 , 'yes', 2),
+(3, 'sweater', 'black', 6.99 , 'yes', 7),
+(4, 'pants', 'blue', 11.99, 'yes', 12), 
+(5, 'pants', 'light blue', 11.99, 'yes' ,8), 
+(6, 'shirt', 'black', 5.99, 'no', 0), 
+(7, 'shirt', 'red', 5.99, 'yes', 3), 
+(8, 'shirt', 'yellow', 5.99, 'yes', 8), 
+(9, 'shirt', 'purple', 5.99, 'yes', 6), 
+(10, 'shirt', 'blue', 5.99, 'yes', 4), 
+(11, 'blouses', 'blue', 4.99, 'yes', 5),
+(12, 'blouses', 'red', 4.99, 'no', 0),
+(13, 'blouses', 'black', 4.99, 'yes', 1);
+
+--Display the database ordered by price (lowest to highest)
+SELECT * FROM store ORDER BY price;
+
+--Display how many shirts are in stock
+SELECT SUM(quantityInStock) FROM store WHERE item = 'shirt';
+
+--Display the 5 items with the least amount in stock 
+SELECT * FROM store ORDER BY quantityInStock limit 5; 
+/* The above helps stores know which items are running low in stock.
+This might aid a store's decision on whether they should restock these items or not.
+Knowing how long it took for the item to sell, how much the item costs, and how much profit
+the stores gets per sale are other data points to consider running
+to make a more informed and data-driven decision */
