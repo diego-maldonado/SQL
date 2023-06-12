@@ -154,7 +154,9 @@ SELECT SB, (Winner_Pts - Loser_Pts) AS Highest_score_difference
 FROM superbowls
 WHERE Highest_score_difference >= 30
 ORDER BY Highest_score_difference DESC;
---Again, you can technically use ORDER BY + LIMIT (see below) when dealing with the most/least type of stats. Yet, for precision it's wise to use a condition with an operator as we did above. Using the method above let's you easily manipulate the query to get a bunch of different stats. You just need to change the operator (>=) and/or number (30) in the condition.
+/*Again, you can technically use ORDER BY + LIMIT (see below) when dealing with the most/least type of stats.
+Yet, for precision it's wise to use a condition with an operator as we did above.
+Using the method above let's you easily manipulate the query to get a bunch of different stats. You just need to change the operator (>=) and/or number (30) in the condition.*/
 SELECT SB, (Winner_Pts - Loser_Pts) AS Highest_score_difference
 FROM superbowls
 ORDER BY Highest_score_difference DESC
@@ -170,3 +172,9 @@ SELECT SB, Winner, Winner_Pts, Loser, Loser_Pts, (Winner_Pts - Loser_Pts) AS Sco
 FROM superbowls
 WHERE (Winner_Pts - Loser_Pts) <= 7 AND Winner_Pts > 30
 ORDER BY Winner_Pts DESC; 
+
+--Super Bowls with the least score difference
+SELECT SB, Winner, Winner_Pts, Loser, Loser_Pts, (Winner_Pts - Loser_Pts) AS Score_difference
+FROM superbowls
+ORDER BY Score_difference
+LIMIT 10;
