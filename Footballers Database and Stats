@@ -1,0 +1,58 @@
+--I created a small database composed of three relational tables
+--I generated unique result sets using the JOIN clause to combine rows from the tables I created
+--Database (as of June 12, 2023)
+CREATE TABLE club (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, country TEXT, league TEXT);
+INSERT INTO club(name, country, league) VALUES
+("Al Nassr FC", "Saudi Arabia", "Saudi Pro League"),
+("Inter Miami CF", "USA","MLS"),
+("PSG", "France", "Ligue 1"),
+("Man City", "England", "EPL"),
+("Barcelona", "Spain", "La Liga"),
+("Real Madrid", "Spain", "La Liga"),
+("Al-Ittihad Club", "Saudi Arabia", "Saudi Pro League");
+
+CREATE TABLE famous_footballers (id INTEGER PRIMARY KEY AUTOINCREMENT, club_id INTEGER, fullname TEXT, teammate_id INTEGER);
+INSERT INTO famous_footballers (club_id, fullname, teammate_id) VALUES
+(1,"Cristiano Ronaldo",NULL), 
+(2,"Lionel Messi",NULL),
+(3,"Neymar Junior",5), 
+(4,"Erling Haaland",8), 
+(3,"Kylian Mbappe",3), 
+(5,"Robert Lewandoski",NULL),
+(7,"Karim Benzema",NULL), 
+(4,"Kevin De Bruyne",4), 
+(6,"Luka Modric",NULL);
+
+CREATE TABLE ucl (id INTEGER PRIMARY KEY AUTOINCREMENT, player_id INTEGER, trophies INTEGER);
+INSERT INTO ucl (player_id, trophies) VALUES
+(1, 5),
+(2, 4),
+(3, 1),
+(4, 1),
+(5, 0),
+(6, 1),
+(7, 5),
+(8, 1),
+(9, 5);
+
+--What club do famous footballers play in?
+SELECT f.fullname, c.name AS club
+FROM famous_footballers f
+INNER JOIN club c
+ON f.club_id = c.id;
+
+--Which famous footballer has won the most UCL trophies?
+SELECT f.fullname, u.trophies AS "UCL trophies"
+FROM ucl u
+INNER JOIN famous_footballers f
+ON u.player_id = f.id
+ORDER BY u.trophies DESC;
+
+--Which famous footballers are teammates and at which club?
+SELECT a.fullname, b.fullname AS teammate, c.name AS club
+FROM famous_footballers a
+INNER JOIN famous_footballers b
+ON a.id = b.teammate_id
+INNER JOIN club c
+ON a.club_id = c.id
+GROUP BY a.club_id;
