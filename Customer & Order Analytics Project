@@ -4,60 +4,73 @@ FROM BIT_DB.JanSales
 WHERE length(orderID) = 6;
 
 --How many of those orders were for an iPhone?
-SELECT COUNT(Product) AS "Jan iPhone orders"
+SELECT COUNT(orderID) AS "Jan iPhone orders"
 FROM BIT_DB.JanSales
-WHERE length(orderID) = 6
-AND Product = 'iPhone';
+WHERE Product = 'iPhone'
+AND length(orderID) = 6;
 
 --Select the customer account numbers for all the orders that were placed in February.
+--It's very important to use DISTINCT as the same customer/account number could have placed multiple orders
 SELECT DISTINCT c.acctnum
 FROM BIT_DB.customers c
 INNER JOIN BIT_DB.FebSales f
 ON c.order_id = f.orderID
 WHERE length(c.order_id) = 6;
---It's very important to use DISTINCT as the same customer/account number could have placed multiple orders
 
 --Which product was the cheapest one sold in January, and what was the price?
 --Method #1.0 (Most accurate as it does not limit the number of distinct products with the cheapest price)
+--You can use IN instead of <=
 SELECT Product, price
 FROM BIT_DB.JanSales
-WHERE length(orderID) = 6
-AND price <= (SELECT MIN(price)
-FROM BIT_DB.JanSales
-WHERE length(orderID) = 6)
+WHERE price <= (SELECT MIN(price) FROM BIT_DB.JanSales WHERE length(orderID) = 6)
+AND length(orderID) = 6
 GROUP BY Product;
---You can use IN instead of <=
---Method #1.1 (Using DISTINCT instead of GROUP BY
+--Method #1.1 (Using DISTINCT instead of GROUP BY)
 SELECT DISTINCT Product, price
 FROM BIT_DB.JanSales
-WHERE length(orderID) = 6
-AND price IN (SELECT MIN(price)
-FROM BIT_DB.JanSales
-WHERE length(orderID) = 6);
+WHERE price IN (SELECT MIN(price) FROM BIT_DB.JanSales WHERE length(orderID) = 6)
+AND length(orderID) = 6;
 --Method #2 (Least accurate as you are assuming there is only 1 product with the cheapest price)
-SELECT DISTINCT product, price 
+SELECT DISTINCT Product, price 
 FROM BIT_DB.JanSales 
+WHERE length(orderID) = 6
 ORDER BY price LIMIT 1;
---Method #3 
+--Method #3 (Also very accurate)
+/*In most RDBMS, the software will NOT allow you to select an aggregate function (like MIN(price)) along with a non-aggregate function (like Product)
+unless you also have a GROUP BY clause at the end of the query.
+This is because without the GROUP BY, the RDBMS doesn't know you're asking for the min(price) of all products, it thinks you're asking for the min(price) of each product.
+Since our data doesn't have multiple prices for the same item, this isn't something we'd be interested in seeing. */
+SELECT DISTINCT Product, MIN(price) 
+FROM BIT_DB.JanSales 
+WHERE length(orderID) = 6
+GROUP BY product, price
+ORDER BY price LIMIT 1;
+--Method #3.1 (No need for DISTINCT when using GROUP BY)
+SELECT Product, MIN(price) 
+FROM BIT_DB.JanSales Jan 
+GROUP BY product, price
+ORDER BY price LIMIT 1;
 
 /*What is the total revenue for each product sold in January?
-(Revenue can be calculated using the number of products sold and the price of the products). */
+(Revenue can be calculated using the quantity of products sold and the price of the products). */
 SELECT Product, ROUND((SUM(Quantity)*price)) Revenue
 FROM BIT_DB.JanSales
 WHERE length(orderID) = 6
 GROUP BY Product;
 
 /*Which products were sold in February at 548 Lincoln St, Seattle, WA 98101, 
-how many of each were sold, and what was the total revenue?*/
-SELECT Product, SUM(Quantity) Qty, ROUND((SUM(Quantity)*price)) Revenue
+and how many of each were sold, and what was the total revenue?*/
+SELECT Product, SUM(Quantity) Qty, (SUM(Quantity)*price) Revenue
 FROM BIT_DB.FebSales
-WHERE length(orderID) = 6
-AND location = '548 Lincoln St, Seattle, WA 98101'
+WHERE location = '548 Lincoln St, Seattle, WA 98101'
+AND length(orderID) = 6
 GROUP BY Product;
 
 /*How many customers ordered more than 2 products at a time in February,
 and what was the average amount spent for those customers?*/
-SELECT COUNT(orderID), ROUND((AVG(Quantity)*price)) Avg
-FROM BIT_DB.FebSales
-WHERE length(orderID) = 6
-AND Quantity > 2;
+SELECT COUNT(distinct c.acctnum), AVG(Quantity*price) Avg
+FROM BIT_DB.customers c
+INNER JOIN BIT_DB.FebSales f
+ON c.order_id = f.orderID
+WHERE f.Quantity > 2
+AND length(f.orderID) = 6;
