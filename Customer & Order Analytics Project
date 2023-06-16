@@ -1,0 +1,63 @@
+--How many orders were placed in January? 
+SELECT COUNT(orderID) AS "Jan orders"
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6;
+
+--How many of those orders were for an iPhone?
+SELECT COUNT(Product) AS "Jan iPhone orders"
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6
+AND Product = 'iPhone';
+
+--Select the customer account numbers for all the orders that were placed in February.
+SELECT DISTINCT c.acctnum
+FROM BIT_DB.customers c
+INNER JOIN BIT_DB.FebSales f
+ON c.order_id = f.orderID
+WHERE length(c.order_id) = 6;
+--It's very important to use DISTINCT as the same customer/account number could have placed multiple orders
+
+--Which product was the cheapest one sold in January, and what was the price?
+--Method #1.0 (Most accurate as it does not limit the number of distinct products with the cheapest price)
+SELECT Product, price
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6
+AND price <= (SELECT MIN(price)
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6)
+GROUP BY Product;
+--You can use IN instead of <=
+--Method #1.1 (Using DISTINCT instead of GROUP BY
+SELECT DISTINCT Product, price
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6
+AND price IN (SELECT MIN(price)
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6);
+--Method #2 (Least accurate as you are assuming there is only 1 product with the cheapest price)
+SELECT DISTINCT product, price 
+FROM BIT_DB.JanSales 
+ORDER BY price LIMIT 1;
+--Method #3 
+
+/*What is the total revenue for each product sold in January?
+(Revenue can be calculated using the number of products sold and the price of the products). */
+SELECT Product, ROUND((SUM(Quantity)*price)) Revenue
+FROM BIT_DB.JanSales
+WHERE length(orderID) = 6
+GROUP BY Product;
+
+/*Which products were sold in February at 548 Lincoln St, Seattle, WA 98101, 
+how many of each were sold, and what was the total revenue?*/
+SELECT Product, SUM(Quantity) Qty, ROUND((SUM(Quantity)*price)) Revenue
+FROM BIT_DB.FebSales
+WHERE length(orderID) = 6
+AND location = '548 Lincoln St, Seattle, WA 98101'
+GROUP BY Product;
+
+/*How many customers ordered more than 2 products at a time in February,
+and what was the average amount spent for those customers?*/
+SELECT COUNT(orderID), ROUND((AVG(Quantity)*price)) Avg
+FROM BIT_DB.FebSales
+WHERE length(orderID) = 6
+AND Quantity > 2;
