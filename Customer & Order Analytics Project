@@ -74,3 +74,58 @@ INNER JOIN BIT_DB.FebSales f
 ON c.order_id = f.orderID
 WHERE f.Quantity > 2
 AND length(f.orderID) = 6;
+
+--Filtering data by date
+SELECT orderdate
+FROM BIT_DB.FebSales
+WHERE orderdate BETWEEN '02/13/19 00:00' AND '02/18/19 00:00'
+ORDER BY orderdate;
+
+SELECT location
+FROM BIT_DB.FebSales 
+WHERE orderdate = '02/18/19 01:35';
+
+SELECT sum(quantity)
+FROM BIT_DB.FebSales 
+WHERE orderdate LIKE '02/18/19%';
+/*We are telling SQL to only select rows where orderdate starts with 02/18/19, but then anything can come after that, that's what the percentage sign
+after the date is for*/
+--Therefore, in this query we are telling SQL to select the total quantity of items ordered on 02/18/19
+
+--Other example queries using LIKE
+SELECT DISTINCT Product
+FROM BIT_DB.FebSales
+WHERE Product LIKE '%Batteries%';
+--We are selecting any rows from the Product column with distinct values in the Product column containing the word 'Baterries' in its name
+
+SELECT DISTINCT Product, price
+FROM BIT_DB.FebSales 
+WHERE price LIKE '%.99';
+--We are selecting any rows from the Product and price columns with distinct values in the price column containing the characters '.99' at the END of its name
+
+--List all the products sold in Los Angeles in February
+SELECT DISTINCT Product
+FROM BIT_DB.FebSales 
+WHERE location LIKE '%Los Angeles%'
+ORDER BY Product;
+
+--List all the products sold in Los Angeles in February, and include how many of each were sold.
+SELECT Product, SUM(Quantity)
+FROM BIT_DB.FebSales 
+WHERE location LIKE '%Los Angeles%'
+GROUP BY Product
+ORDER BY Product;
+--You CANNOT use DISTINCT instead of GROUP BY in this scenario, because you are aggregating data and for that you'll always need to use GROUP BY.
+--See for yourself by running the query below.
+SELECT DISTINCT Product, SUM(Quantity)
+FROM BIT_DB.FebSales 
+WHERE location LIKE '%Los Angeles%';
+
+--For a better understanding of DISTINCT, run the query below.
+--You will get duplicate products because the location is distinct, the city is the same, but the entire value/text in location will be different.
+--The SELECT DISTINCT clause only retrieves distinct values in a specified list (emphasis on list) of columns.
+SELECT DISTINCT Product, location
+FROM BIT_DB.FebSales 
+WHERE location LIKE '%Los Angeles%'
+ORDER BY Product;
+--You get duplicate products as rows with the same product name but a different location classify as distinct pieces of data
