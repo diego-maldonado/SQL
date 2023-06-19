@@ -122,10 +122,142 @@ FROM BIT_DB.FebSales
 WHERE location LIKE '%Los Angeles%';
 
 --For a better understanding of DISTINCT, run the query below.
---You will get duplicate products because the location is distinct, the city is the same, but the entire value/text in location will be different.
---The SELECT DISTINCT clause only retrieves distinct values in a specified list (emphasis on list) of columns.
+/*You might think that you'll retrieve rows with DISTINCT product names and the first location that matches that product...
+instead, you will get rows with duplicate product names because the location is DISTINCT, the city is the same, 
+but the entire value/text in location will be different.
+Therefore, rows with the same product name but a different location classify as distinct pieces of data*/
+--The SELECT DISTINCT clause retrieves distinct values in a specified list (emphasis on list) of columns.
 SELECT DISTINCT Product, location
 FROM BIT_DB.FebSales 
 WHERE location LIKE '%Los Angeles%'
 ORDER BY Product;
---You get duplicate products as rows with the same product name but a different location classify as distinct pieces of data
+/*In case you have thought about this already...
+You can't use DISTINCT to get the unique values for only one column when selecting multiple columns
+like this -> SELECT (DISTINCT Product), location 
+or like this -> SELECT DISTINCT(Product), location
+as DISTINCT is NOT a function*/
+
+--Which locations in New York received at least 3 orders in January, and how many orders did they each receive?
+SELECT location, COUNT(orderID)
+FROM BIT_DB.JanSales
+WHERE location LIKE ('%NY%')
+AND length(orderid) = 6 
+GROUP BY location
+HAVING COUNT(orderID) >= 3;
+/*The query above gives us a better understanding of where our top customers
+(classified by the amount of orders placed) are located at.*/
+/*If a lot of customers or top customers are located in a specific area, then you might consider
+taking a deeper look at this data in hopes of finding a trend or correlation. Maybe you discover that there is not a lot
+of competition in that area, or you are able to get an insight on the reason for the rise in demand for a specific product
+in that area. You might also use this data to increase customer satisfaction, as you would now know which customers are your
+top customers for the month of January and you could ship them some sort of thank you gift,
+give them access to an exclusive newsletter, coupon code, etc.*/
+
+--How many of each type of headphone were sold in February?
+SELECT product, SUM(quantity) AS 'quantity sold in Feb'
+FROM BIT_DB.FebSales
+WHERE product LIKE ('%headphone%')
+AND length(orderid) = 6 
+GROUP BY product;
+
+--What was the average amount spent per account in February?
+SELECT SUM(f.quantity*f.price)/COUNT(DISTINCT c.acctnum) AS 'Average amount spent per account in February'
+FROM BIT_DB.customers c
+INNER JOIN BIT_DB.FebSales f
+ON c.order_id = f.orderID
+WHERE length(orderid) = 6;
+--returns 206.1692399466157
+/*Using DISTINCT is very important as some customers/acctnums maybe have placed multiple orders.
+SQL will match/JOIN by order id's, and there might be rows that contains the same account num but different orderID.
+To see the importance of using DISTINCT run the query below and compare the result to the query above*/
+SELECT SUM(f.quantity*f.price)/COUNT(c.acctnum)
+FROM BIT_DB.FebSales f
+INNER JOIN BIT_DB.customers c
+ON f.orderid=c.order_id
+WHERE length(orderid) = 6;
+--retuns 190.00034676304287
+--For a full breakdown run the queries below 
+SELECT count(DISTINCT c.acctnum), SUM(f.quantity*f.price)
+FROM BIT_DB.customers c
+INNER JOIN BIT_DB.FebSales f
+ON c.order_id = f.orderID
+WHERE length(orderid) = 6;
+--returns 11986 for acctnum
+--and 2471144.5100001357 for SUM(f.quantity*f.price)
+--to get the average simply divide the SUM by the COUNT
+SELECT 2471144.5100001357/11986;
+--returns 206.1692399466157
+/*If you delete the DISTINCT, you'll get a different number for acctnum but the same for the SUM,
+this is because we JOINed our tables by orderID, therefore the quantity and price columns will have values for all matching order ids's
+even if they have the same acctnum*/
+/*If you run the query below, you'll see that the total rows loaded equals 11986, this being the same number as the number of
+DISTINCT acctnum in our query above*/
+SELECT c.acctnum, f.orderID
+FROM BIT_DB.customers c
+INNER JOIN BIT_DB.FebSales f
+ON c.order_id = f.orderID
+WHERE length(orderid) = 6
+GROUP BY acctnum;
+
+--What was the average quantity of products purchased per account in February?
+SELECT SUM(f.quantity)/COUNT(DISTINCT c.acctnum) AS 'Average quantity of products purchased per account in February'
+FROM BIT_DB.customers c
+INNER JOIN BIT_DB.FebSales f
+ON c.order_id = f.orderID
+WHERE length(orderid) = 6;
+
+--Which product brought in the most revenue in January and how much revenue did it bring in total?
+SELECT product, SUM(quantity*price)
+FROM BIT_DB.JanSales 
+WHERE length(orderid) = 6
+GROUP BY product
+ORDER BY sum(quantity*price) DESC 
+LIMIT 1;
+--Again, with the query above we are assuming that only one product brought in the most revenue
+/*In SQLiteStudio, you cannot aggregate values twice in a single query, therefore, I can't run an query like the following
+SELECT product, SUM(quantity*price)
+FROM BIT_DB.JanSales 
+WHERE length(orderid) = 6
+GROUP BY product
+HAVING SUM(quantity*price) = MAX(SUM(quantity*price));
+Fortunately, this can be solved with a subquery.*/
+SELECT product, SUM(quantity*price)
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+GROUP BY product
+HAVING SUM(quantity*price) = (SELECT maxrevenue FROM (
+SELECT SUM(quantity*price) AS maxrevenue
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+GROUP BY product
+ORDER BY sum(quantity*price) DESC 
+LIMIT 1));
+--Or simply
+SELECT product, SUM(quantity*price)
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+GROUP BY product
+HAVING SUM(quantity*price) = (
+SELECT SUM(quantity*price)
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+GROUP BY product
+ORDER BY sum(quantity*price) DESC 
+LIMIT 1);
+--Or (my favorite)
+SELECT product, SUM(quantity*price)
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+GROUP BY product
+HAVING SUM(quantity*price) >= (SELECT MAX(revenue) FROM (
+SELECT SUM(quantity*price) AS revenue
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+GROUP BY product));
+/*Unfortunately the queries above as precise as they are, are too long, making them widely inefficient to write.
+What I would do instead, is simply run the first query but change the LIMIT to 2, if the products returned have
+the same SUM, then I would change the LIMIT to 3 and so on until I get a product with a different SUM, 
+meaning that there are no more products that brought in the same SUM/max revenue*/
+/*You could also change the LIMIT to a relatively high number (depending on your number of products) from the start, like 5,
+ to minimize the chances of you having to change the LIMIT again in case the products returned all have the same revenue*/
+
